@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       const { done, value } = await reader.read();
       if (done) break;
 
-      const chunk = decoder.decode(value);
+      const chunk = decoder.decode(value, { stream: true });
       const lines = chunk.split('\n').filter(line => line.trim());
 
       for (const line of lines) {
@@ -73,15 +73,40 @@ export async function POST(request: NextRequest) {
           try {
             const data = JSON.parse(line.slice(6));
             
-            // Extract the last assistant message from the state
-            if (data.messages && Array.isArray(data.messages)) {
-              const lastMessage = data.messages[data.messages.length - 1];
-              if (lastMessage && lastMessage.role === 'assistant') {
-                fullResponse = lastMessage.content;
+            // O formato do LangSmith com stream_mode="values" retorna objetos com "messages"
+            // Procurar pela última mensagem do assistente em qualquer nível
+            if (data && typeof data === 'object') {
+              // Tentar extrair messages do primeiro nível
+              let messages = data.messages;
+              
+              // Se não encontrar, pode estar em um nó específico
+              if (!messages && typeof data === 'object') {
+                // Procurar em qualquer chave que tenha messages
+                for (const key of Object.keys(data)) {
+                  if (data[key] && data[key].messages) {
+                    messages = data[key].messages;
+                    break;
+                  }
+                }
+              }
+              
+              // Extrair a última mensagem do assistente
+              if (messages && Array.isArray(messages)) {
+                const lastMessage = messages[messages.length - 1];
+                if (lastMessage) {
+                  // Pode ser role: 'assistant' ou type: 'ai'
+                  if (lastMessage.role === 'assistant' || lastMessage.type === 'ai') {
+                    // O content pode ser string ou objeto
+                    fullResponse = typeof lastMessage.content === 'string' 
+                      ? lastMessage.content 
+                      : JSON.stringify(lastMessage.content);
+                  }
+                }
               }
             }
           } catch (e) {
-            // Ignore parse errors for non-JSON lines
+            console.error('Error parsing stream chunk:', e);
+            // Continuar tentando parsear outras linhas
           }
         }
       }
