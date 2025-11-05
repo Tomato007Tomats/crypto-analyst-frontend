@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call LangSmith API
+    // Call LangSmith API - stateless run
     const response = await fetch(`${LANGSMITH_API_URL}/runs/stream`, {
       method: 'POST',
       headers: {
@@ -30,11 +30,11 @@ export async function POST(request: NextRequest) {
         'X-Api-Key': LANGSMITH_API_KEY,
       },
       body: JSON.stringify({
-        assistant_id: 'crypto_analyst_agent',
+        assistant_id: 'agent',  // Use o nome do graph, não um ID customizado
         input: {
           messages: [
             {
-              role: 'user',
+              role: 'human',  // Usar 'human' em vez de 'user'
               content: message,
             },
           ],
