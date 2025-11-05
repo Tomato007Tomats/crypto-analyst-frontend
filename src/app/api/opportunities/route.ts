@@ -21,11 +21,11 @@ export async function GET() {
         'X-Api-Key': LANGSMITH_API_KEY,
       },
       body: JSON.stringify({
-        assistant_id: 'crypto_analyst_agent',
+        assistant_id: 'crypto_analyst',
         input: {
           messages: [
             {
-              role: 'user',
+              role: 'human',
               content: 'List all current opportunities',
             },
           ],
@@ -43,9 +43,43 @@ export async function GET() {
       );
     }
 
-    // For now, return empty list (opportunities will be managed via chat)
-    // In a real implementation, you'd parse the agent response
-    return NextResponse.json({ opportunities: [] });
+    // Parse the response to extract opportunities
+    const reader = response.body?.getReader();
+    if (!reader) {
+      return NextResponse.json({ opportunities: [] });
+    }
+
+    let opportunities: any[] = [];
+    const decoder = new TextDecoder();
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(line => line.trim());
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              // Buscar opportunities no state
+              if (data && data.opportunities && Array.isArray(data.opportunities)) {
+                opportunities = data.opportunities;
+              }
+            } catch (e) {
+              // Ignorar erros de parsing
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing opportunities stream:', error);
+    }
+
+    return NextResponse.json({ opportunities });
   } catch (error) {
     console.error('Error fetching opportunities:', error);
     return NextResponse.json(

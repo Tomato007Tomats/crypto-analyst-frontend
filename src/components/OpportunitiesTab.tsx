@@ -4,8 +4,6 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import { TrendingUp, TrendingDown, Eye, DollarSign, RefreshCw, Plus, X } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface Opportunity {
@@ -24,7 +22,7 @@ interface Opportunity {
 }
 
 export default function OpportunitiesTab() {
-  const { data, error, mutate } = useSWR(`${API_URL}/api/opportunities`, fetcher, {
+  const { data, error, mutate } = useSWR('/api/opportunities', fetcher, {
     refreshInterval: 5000, // Refresh every 5 seconds
   });
 
@@ -87,7 +85,7 @@ export default function OpportunitiesTab() {
     if (!confirm('Are you sure you want to delete this opportunity?')) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/opportunities/${id}`, {
+      const response = await fetch(`/api/opportunities/${id}`, {
         method: 'DELETE',
       });
 
@@ -102,7 +100,7 @@ export default function OpportunitiesTab() {
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     try {
-      const response = await fetch(`${API_URL}/api/opportunities/${id}`, {
+      const response = await fetch(`/api/opportunities/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ updates: { status: newStatus } }),
