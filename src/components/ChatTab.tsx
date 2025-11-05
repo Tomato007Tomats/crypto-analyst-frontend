@@ -3,8 +3,6 @@
 import { useState } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -36,7 +34,7 @@ export default function ChatTab() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/chat`, {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: input }),
