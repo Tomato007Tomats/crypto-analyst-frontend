@@ -30,11 +30,11 @@ export async function POST(request: NextRequest) {
         'X-Api-Key': LANGSMITH_API_KEY,
       },
       body: JSON.stringify({
-        assistant_id: 'agent',  // Use o nome do graph, não um ID customizado
+        assistant_id: 'crypto_analyst',  // Nome do graph conforme registrado no LangSmith
         input: {
           messages: [
             {
-              role: 'human',  // Usar 'human' em vez de 'user'
+              role: 'human',
               content: message,
             },
           ],
