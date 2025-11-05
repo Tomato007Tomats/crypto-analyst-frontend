@@ -13,73 +13,22 @@ export async function GET() {
       );
     }
 
-    // Call the opportunities list endpoint
-    const response = await fetch(`${LANGSMITH_API_URL}/runs/stream`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Api-Key': LANGSMITH_API_KEY,
-      },
-      body: JSON.stringify({
-        assistant_id: 'crypto_analyst',
-        input: {
-          messages: [
-            {
-              role: 'human',
-              content: 'List all current opportunities',
-            },
-          ],
-        },
-        stream_mode: 'values',
-      }),
+    // NOTA: As oportunidades estão sendo salvas no state do agente (OpportunitiesStore in-memory)
+    // mas o state é thread-specific no LangSmith. 
+    // 
+    // Para uma implementação completa, precisamos:
+    // 1. Usar o LangGraph Store API (cross-thread persistence)
+    // 2. Ou fazer o agente salvar em um banco de dados externo
+    //
+    // Por enquanto, retornamos um array vazio e as oportunidades são gerenciadas via chat.
+    // O agente adiciona oportunidades quando você pede, mas elas ficam no contexto da conversa.
+
+    console.log('Opportunities endpoint called - returning empty array (opportunities are chat-managed)');
+    
+    return NextResponse.json({ 
+      opportunities: [],
+      _note: 'Opportunities are managed through the chat interface. Ask the agent to create opportunities and they will be stored in the conversation context.'
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('LangSmith API error:', errorText);
-      return NextResponse.json(
-        { error: 'Failed to fetch opportunities' },
-        { status: response.status }
-      );
-    }
-
-    // Parse the response to extract opportunities
-    const reader = response.body?.getReader();
-    if (!reader) {
-      return NextResponse.json({ opportunities: [] });
-    }
-
-    let opportunities: any[] = [];
-    const decoder = new TextDecoder();
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n').filter(line => line.trim());
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              
-              // Buscar opportunities no state
-              if (data && data.opportunities && Array.isArray(data.opportunities)) {
-                opportunities = data.opportunities;
-              }
-            } catch (e) {
-              // Ignorar erros de parsing
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing opportunities stream:', error);
-    }
-
-    return NextResponse.json({ opportunities });
   } catch (error) {
     console.error('Error fetching opportunities:', error);
     return NextResponse.json(
