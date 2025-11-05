@@ -22,12 +22,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const apiUrl = LANGSMITH_API_URL;
+    const apiKey = LANGSMITH_API_KEY;
+
     // Call LangSmith API - stateless run
-    const response = await fetch(`${LANGSMITH_API_URL}/runs/stream`, {
+    const response = await fetch(`${apiUrl}/runs/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Api-Key': LANGSMITH_API_KEY,
+        'X-Api-Key': apiKey,
       },
       body: JSON.stringify({
         assistant_id: 'crypto_analyst',  // Nome do graph conforme registrado no LangSmith
